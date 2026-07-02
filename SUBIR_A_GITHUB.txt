@@ -1,0 +1,9 @@
+PASOS RÁPIDOS
+
+1. Crear repo nuevo en GitHub: pocas-lucas
+2. Subir todos estos archivos al repo.
+3. Ir a Actions → Actualizar ofertas → Run workflow.
+4. Conectar Netlify al repo.
+5. Netlify: build command vacío, publish directory: .
+
+No subir solo el ZIP a Netlify. La gracia ahora es que GitHub Actions actualice ofertas.json automáticamente.

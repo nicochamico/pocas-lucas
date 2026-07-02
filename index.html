@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="es-CL">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pocas Lucas — Radar de ofertas de supermercados en Chile</title>
+<meta name="description" content="Encuentra ofertas en supermercados de Chile: despensa, aseo, bebidas y más. El sitio indica siempre si un precio es real o de demostración.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0E1721;
+    --ink-soft:#182740;
+    --ink-line:#2A3B57;
+    --paper:#F6F4EF;
+    --paper-line:#DEDACB;
+    --bg:#EFEDE5;
+    --green:#158F5A;
+    --green-bright:#2FD989;
+    --red:#D8432B;
+    --text:#14191F;
+    --muted:#63666C;
+    --muted-2:#8A8D92;
+    --radius-card:14px;
+    --shadow-card:0 1px 2px rgba(14,23,33,.06), 0 8px 20px -12px rgba(14,23,33,.25);
+    font-size:16px;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter',system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+  }
+  h1,h2,h3,.brand,.stat-num,.chip{font-family:'Space Grotesk',system-ui,sans-serif;}
+  .mono{font-family:'IBM Plex Mono',ui-monospace,monospace;}
+  a{color:inherit;}
+  button{font-family:inherit;}
+  img,svg{display:block;}
+  ::selection{background:var(--green-bright);color:var(--ink);}
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:.001ms !important; animation-iteration-count:1 !important; transition-duration:.001ms !important;}
+  }
+
+  /* ---------- Skip link ---------- */
+  .skip-link{
+    position:absolute; left:-999px; top:0; background:var(--green); color:#fff;
+    padding:10px 16px; border-radius:0 0 8px 0; z-index:200;
+  }
+  .skip-link:focus{left:0;}
+
+  /* ---------- Header ---------- */
+  header{
+    background:var(--ink);
+    color:#fff;
+    position:sticky;
+    top:0;
+    z-index:50;
+    box-shadow:0 6px 24px -14px rgba(0,0,0,.5);
+  }
+  .header-inner{
+    max-width:1180px;
+    margin:0 auto;
+    padding:14px 18px 16px;
+  }
+  .brand-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+  }
+  .brand{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-weight:700;
+    font-size:1.28rem;
+    letter-spacing:-.01em;
+    white-space:nowrap;
+  }
+  .radar-icon{width:30px;height:30px;flex:none;position:relative;}
+  .radar-icon svg{width:100%;height:100%;}
+  .radar-sweep{
+    transform-origin:15px 15px;
+    animation:sweep 4s linear infinite;
+  }
+  @keyframes sweep{ to{ transform:rotate(360deg); } }
+
+  .live-badge{
+    display:flex;
+    align-items:center;
+    gap:7px;
+    font-size:.76rem;
+    color:#C9D3DE;
+    font-family:'IBM Plex Mono',monospace;
+    white-space:nowrap;
+  }
+  .live-dot{
+    width:7px;height:7px;border-radius:50%;
+    background:var(--green-bright);
+    box-shadow:0 0 0 0 rgba(47,217,137,.6);
+    animation:pulse 2s ease-out infinite;
+    flex:none;
+  }
+  @keyframes pulse{
+    0%{ box-shadow:0 0 0 0 rgba(47,217,137,.55); }
+    70%{ box-shadow:0 0 0 7px rgba(47,217,137,0); }
+    100%{ box-shadow:0 0 0 0 rgba(47,217,137,0); }
+  }
+
+  .tagline{
+    margin:10px 0 14px;
+    color:#AEB9C6;
+    font-size:.92rem;
+    max-width:46ch;
+  }
+
+  .search-row{
+    display:flex;
+    gap:8px;
+  }
+  .search-box{
+    flex:1;
+    display:flex;
+    align-items:center;
+    gap:9px;
+    background:var(--ink-soft);
+    border:1px solid var(--ink-line);
+    border-radius:11px;
+    padding:11px 14px;
+  }
+  .search-box:focus-within{
+    border-color:var(--green-bright);
+    box-shadow:0 0 0 3px rgba(47,217,137,.18);
+  }
+  .search-box svg{flex:none; opacity:.7;}
+  .search-box input{
+    flex:1;
+    background:none;
+    border:none;
+    outline:none;
+    color:#fff;
+    font-size:.96rem;
+    font-family:'Inter',sans-serif;
+  }
+  .search-box input::placeholder{color:#7C889B;}
+  .clear-btn{
+    background:none;border:none;color:#8FA0B6;cursor:pointer;
+    padding:2px; border-radius:6px; line-height:0;
+  }
+  .clear-btn:hover{color:#fff;}
+
+  /* ---------- Demo banner ---------- */
+  .demo-banner{
+    background:#FFF4D6;
+    border-bottom:1px solid #E9CE84;
+  }
+  .demo-banner-inner{
+    max-width:1180px;
+    margin:0 auto;
+    padding:9px 18px;
+    display:flex;
+    align-items:flex-start;
+    gap:9px;
+  }
+  .demo-banner-icon{flex:none; font-size:.95rem; line-height:1.4;}
+  .demo-banner p{
+    margin:0;
+    font-size:.82rem;
+    color:#5C4B12;
+    line-height:1.4;
+  }
+
+  /* ---------- Filter bar ---------- */
+  .filter-bar{
+    background:var(--paper);
+    border-bottom:1px solid var(--paper-line);
+    position:sticky;
+    top:0;
+    z-index:40;
+  }
+  /* header pushes filter bar down; using top offset via JS not needed since header not fixed separately -- stacked sticky works because header is also sticky above in normal flow */
+  .filter-inner{
+    max-width:1180px;
+    margin:0 auto;
+    padding:12px 18px;
+  }
+  .filter-scroll{
+    display:flex;
+    gap:8px;
+    overflow-x:auto;
+    padding-bottom:2px;
+    scrollbar-width:thin;
+  }
+  .filter-scroll::-webkit-scrollbar{height:5px;}
+  .filter-scroll::-webkit-scrollbar-thumb{background:var(--paper-line);border-radius:4px;}
+
+  .chip{
+    flex:none;
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    padding:7px 13px;
+    border-radius:999px;
+    border:1px solid var(--paper-line);
+    background:#fff;
+    color:var(--text);
+    font-size:.82rem;
+    font-weight:600;
+    cursor:pointer;
+    white-space:nowrap;
+    transition:background .15s, border-color .15s, color .15s;
+  }
+  .chip:hover{border-color:#B9B39E;}
+  .chip.active{
+    background:var(--ink);
+    border-color:var(--ink);
+    color:#fff;
+  }
+  .chip .count{
+    font-family:'IBM Plex Mono',monospace;
+    font-weight:500;
+    opacity:.65;
+    font-size:.74rem;
+  }
+  .chip-divider{
+    flex:none;width:1px;background:var(--paper-line);margin:2px 2px;
+  }
+
+  .filter-row2{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:14px;
+    margin-top:12px;
+  }
+  .price-control{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex:1;
+    min-width:220px;
+  }
+  .price-control label{
+    font-size:.78rem;
+    color:var(--muted);
+    white-space:nowrap;
+  }
+  .price-control output{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:.82rem;
+    font-weight:600;
+    background:#fff;
+    border:1px solid var(--paper-line);
+    padding:4px 8px;
+    border-radius:7px;
+    white-space:nowrap;
+  }
+  input[type="range"]{
+    flex:1;
+    accent-color:var(--green);
+    height:4px;
+  }
+
+  .sort-select{
+    font-family:'Inter',sans-serif;
+    font-size:.82rem;
+    font-weight:600;
+    background:#fff;
+    border:1px solid var(--paper-line);
+    border-radius:8px;
+    padding:8px 10px;
+    color:var(--text);
+    cursor:pointer;
+  }
+
+  /* ---------- Stats strip ---------- */
+  .stats{
+    max-width:1180px;
+    margin:0 auto;
+    padding:18px 18px 4px;
+    display:flex;
+    gap:22px;
+    flex-wrap:wrap;
+  }
+  .stat{
+    display:flex;
+    flex-direction:column;
+    gap:1px;
+  }
+  .stat-num{
+    font-size:1.35rem;
+    font-weight:700;
+    letter-spacing:-.01em;
+  }
+  .stat-label{
+    font-size:.72rem;
+    color:var(--muted);
+    text-transform:uppercase;
+    letter-spacing:.05em;
+  }
+
+  /* ---------- Grid ---------- */
+  main{
+    max-width:1180px;
+    margin:0 auto;
+    padding:14px 18px 60px;
+  }
+  .results-count{
+    font-size:.82rem;
+    color:var(--muted);
+    margin:10px 2px 14px;
+    font-family:'IBM Plex Mono',monospace;
+  }
+  .grid{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:16px;
+  }
+  @media(min-width:640px){
+    .grid{grid-template-columns:repeat(2,1fr);}
+  }
+  @media(min-width:980px){
+    .grid{grid-template-columns:repeat(3,1fr);}
+  }
+
+  /* ---------- Ticket card ---------- */
+  .card{
+    background:var(--paper);
+    border-radius:var(--radius-card);
+    box-shadow:var(--shadow-card);
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+    position:relative;
+    animation:rise .35s ease both;
+  }
+  @keyframes rise{
+    from{opacity:0; transform:translateY(6px);}
+    to{opacity:1; transform:translateY(0);}
+  }
+  .card-top{
+    background:var(--ink);
+    color:#fff;
+    padding:10px 14px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    position:relative;
+  }
+  .demo-tag{
+    position:absolute;
+    top:-1px;
+    right:12px;
+    background:#F2B705;
+    color:#3A2E00;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:.6rem;
+    font-weight:700;
+    letter-spacing:.06em;
+    padding:2px 7px 3px;
+    border-radius:0 0 5px 5px;
+  }
+  .store-tag{
+    font-size:.72rem;
+    font-weight:700;
+    letter-spacing:.04em;
+    text-transform:uppercase;
+    font-family:'Space Grotesk',sans-serif;
+  }
+  .cat-tag{
+    font-size:.7rem;
+    color:#B7C2D0;
+    font-family:'IBM Plex Mono',monospace;
+    display:flex;
+    align-items:center;
+    gap:5px;
+    white-space:nowrap;
+  }
+
+  .tear{
+    position:relative;
+    height:1px;
+    border-top:2px dashed var(--paper-line);
+  }
+  .tear::before,.tear::after{
+    content:"";
+    position:absolute;
+    top:-8px;
+    width:16px;height:16px;
+    border-radius:50%;
+    background:var(--bg);
+  }
+  .tear::before{left:-8px;}
+  .tear::after{right:-8px;}
+
+  .card-body{
+    padding:16px 16px 14px;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    flex:1;
+  }
+  .product-name{
+    font-size:.98rem;
+    font-weight:600;
+    line-height:1.3;
+    min-height:2.6em;
+  }
+  .price-row{
+    display:flex;
+    align-items:baseline;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  .price-now{
+    font-family:'IBM Plex Mono',monospace;
+    font-weight:700;
+    font-size:1.5rem;
+    color:var(--ink);
+  }
+  .price-old{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:.85rem;
+    color:var(--muted-2);
+    text-decoration:line-through;
+  }
+  .badge-discount{
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:700;
+    font-size:.75rem;
+    color:#fff;
+    background:var(--red);
+    padding:4px 8px;
+    border-radius:6px;
+    transform:rotate(-3deg);
+    display:inline-block;
+    white-space:nowrap;
+  }
+  .card-foot{
+    margin-top:auto;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    font-size:.72rem;
+    color:var(--muted);
+    padding-top:6px;
+    border-top:1px solid var(--paper-line);
+  }
+  .updated{
+    display:flex;
+    align-items:center;
+    gap:5px;
+    font-family:'IBM Plex Mono',monospace;
+  }
+  .updated .dot{
+    width:5px;height:5px;border-radius:50%;background:var(--green);
+    flex:none;
+  }
+  .unit-price{
+    font-family:'IBM Plex Mono',monospace;
+    white-space:nowrap;
+  }
+  .card-link{
+    display:flex;
+    align-items:center;
+    gap:5px;
+    font-size:.78rem;
+    font-weight:600;
+    color:var(--green);
+    text-decoration:none;
+    padding-top:2px;
+  }
+  .card-link:hover{text-decoration:underline;}
+  .card-link svg{flex:none;}
+
+  /* ---------- Empty state ---------- */
+  .empty{
+    grid-column:1/-1;
+    text-align:center;
+    padding:60px 20px;
+    color:var(--muted);
+  }
+  .empty h3{margin:14px 0 6px; color:var(--text); font-size:1.05rem;}
+  .empty p{margin:0 0 16px; font-size:.9rem;}
+  .empty button{
+    background:var(--ink);
+    color:#fff;
+    border:none;
+    padding:10px 18px;
+    border-radius:9px;
+    font-weight:600;
+    font-size:.85rem;
+    cursor:pointer;
+  }
+  .loading, .load-error{
+    grid-column:1/-1;
+    text-align:center;
+    padding:60px 20px;
+    color:var(--muted);
+    font-family:'IBM Plex Mono',monospace;
+    font-size:.86rem;
+  }
+  .load-error{color:var(--red);}
+
+  /* ---------- Footer ---------- */
+  footer{
+    background:var(--ink);
+    color:#AEB9C6;
+    padding:34px 18px 28px;
+    font-size:.82rem;
+  }
+  .footer-inner{
+    max-width:1180px;
+    margin:0 auto;
+    display:flex;
+    flex-wrap:wrap;
+    gap:24px;
+    justify-content:space-between;
+  }
+  .footer-col{max-width:340px;}
+  .footer-col h4{
+    color:#fff;
+    font-size:.82rem;
+    margin:0 0 8px;
+    font-family:'Space Grotesk',sans-serif;
+  }
+  .footer-col p{margin:0 0 6px; line-height:1.5;}
+  .footer-bottom{
+    max-width:1180px;
+    margin:22px auto 0;
+    padding-top:16px;
+    border-top:1px solid var(--ink-line);
+    font-size:.74rem;
+    color:#7C889B;
+    display:flex;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+
+  /* visible focus */
+  a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible{
+    outline:2px solid var(--green-bright);
+    outline-offset:2px;
+  }
+
+  @media(max-width:639px){
+    .brand{font-size:1.12rem;}
+    .live-badge span.txt{display:none;}
+    .footer-inner{flex-direction:column;}
+  }
+</style>
+</head>
+<body>
+<a class="skip-link" href="#main">Saltar al contenido</a>
+
+<header>
+  <div class="header-inner">
+    <div class="brand-row">
+      <div class="brand">
+        <span class="radar-icon" aria-hidden="true">
+          <svg viewBox="0 0 30 30" fill="none">
+            <circle cx="15" cy="15" r="13" stroke="#2FD989" stroke-opacity="0.35" stroke-width="1.4"/>
+            <circle cx="15" cy="15" r="8.5" stroke="#2FD989" stroke-opacity="0.45" stroke-width="1.2"/>
+            <circle cx="15" cy="15" r="4" stroke="#2FD989" stroke-opacity="0.6" stroke-width="1"/>
+            <g class="radar-sweep">
+              <path d="M15 15 L15 2 A13 13 0 0 1 26.2 8.5 Z" fill="#2FD989" fill-opacity="0.28"/>
+            </g>
+            <circle cx="15" cy="15" r="1.6" fill="#2FD989"/>
+          </svg>
+        </span>
+        Pocas Lucas
+      </div>
+      <div class="live-badge" id="liveBadge">
+        <span class="live-dot" aria-hidden="true"></span>
+        <span class="txt">Radar activo · </span><span id="updatedAgo">cargando…</span>
+      </div>
+    </div>
+
+    <p class="tagline" id="tagline">Ofertas de supermercados en Chile: despensa, aseo, bebidas y más.</p>
+
+    <div class="search-row">
+      <div class="search-box">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#8FA0B6" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="searchInput" placeholder="Busca un producto, ej: detergente, arroz, shampoo..." aria-label="Buscar producto">
+        <button class="clear-btn" id="clearSearch" aria-label="Limpiar búsqueda" title="Limpiar" hidden>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="demo-banner" id="demoBanner" hidden>
+  <div class="demo-banner-inner">
+    <span class="demo-banner-icon" aria-hidden="true">⚠️</span>
+    <p><strong id="demoBannerTitle">Datos de demostración.</strong> <span id="demoBannerText">Los precios de este radar todavía no vienen de una fuente real; se usan solo para probar el diseño.</span></p>
+  </div>
+</div>
+
+<div class="filter-bar">
+  <div class="filter-inner">
+    <div class="filter-scroll" id="storeChips" role="group" aria-label="Filtrar por supermercado"></div>
+    <div class="filter-scroll" id="catChips" role="group" aria-label="Filtrar por categoría" style="margin-top:8px;"></div>
+
+    <div class="filter-row2">
+      <div class="price-control">
+        <label for="priceRange">Hasta</label>
+        <input type="range" id="priceRange" min="500" max="9000" step="100" value="9000">
+        <output id="priceOutput" class="mono">$9.000</output>
+      </div>
+      <select class="sort-select" id="sortSelect" aria-label="Ordenar por">
+        <option value="discount">Mayor descuento</option>
+        <option value="price-asc">Menor precio</option>
+        <option value="price-desc">Mayor precio</option>
+        <option value="recent">Actualizado recién</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<div class="stats">
+  <div class="stat"><span class="stat-num mono" id="statCount">–</span><span class="stat-label">Ofertas activas</span></div>
+  <div class="stat"><span class="stat-num mono" id="statAvg">–</span><span class="stat-label">Descuento promedio</span></div>
+  <div class="stat"><span class="stat-num mono" id="statStores">–</span><span class="stat-label">Supermercados</span></div>
+</div>
+
+<main id="main">
+  <p class="results-count" id="resultsCount">Cargando…</p>
+  <div class="grid" id="grid"></div>
+</main>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-col">
+      <h4>Cómo funciona el radar</h4>
+      <p>Rastreamos precios de supermercados chilenos y mostramos solo las bajas reales frente al precio habitual del producto.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Sobre este prototipo</h4>
+      <p>Estás viendo una propuesta de diseño con datos de muestra. La próxima etapa conecta el radar a precios reales y, más adelante, a ofertas publicadas por la comunidad.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Contacto</h4>
+      <p>¿Encontraste un precio que ya no está vigente? Repórtalo escribiendo a hola@pocaslucas.cl</p>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>© 2026 Pocas Lucas · Hecho en Chile</span>
+    <span>Precios de referencia, verifica en tienda antes de comprar</span>
+  </div>
+</footer>
+
+<script>
+(function(){
+  const DATA_URL = './ofertas.json';
+
+  const ICONS_FALLBACK = {
+    despensa:'🍚', aseo:'🧽', bebidas:'🥤', lacteos:'🥛',
+    carnes:'🥩', cuidado:'🧴', congelados:'🧊', snacks:'🍪'
+  };
+
+  const state = { query:'', stores:new Set(), cats:new Set(), maxPrice:9999999, sort:'discount' };
+  let ALL = [];
+  let CATS = [];   // [{id,label,icon}]
+  let STORES = []; // [name,...]
+  let meta = {};
+
+  const grid = document.getElementById('grid');
+  const resultsCount = document.getElementById('resultsCount');
+  const searchInput = document.getElementById('searchInput');
+  const clearSearch = document.getElementById('clearSearch');
+  const priceRange = document.getElementById('priceRange');
+  const priceOutput = document.getElementById('priceOutput');
+  const sortSelect = document.getElementById('sortSelect');
+  const storeChips = document.getElementById('storeChips');
+  const catChips = document.getElementById('catChips');
+  const statCount = document.getElementById('statCount');
+  const statAvg = document.getElementById('statAvg');
+  const statStores = document.getElementById('statStores');
+  const updatedAgo = document.getElementById('updatedAgo');
+  const demoBanner = document.getElementById('demoBanner');
+  const demoBannerTitle = document.getElementById('demoBannerTitle');
+  const demoBannerText = document.getElementById('demoBannerText');
+  const tagline = document.getElementById('tagline');
+
+  function fmtCLP(n){
+    return '$' + Math.round(n).toLocaleString('es-CL');
+  }
+
+  function timeAgo(iso){
+    const then = new Date(iso).getTime();
+    const now = Date.now();
+    const min = Math.max(0, Math.round((now - then) / 60000));
+    if(min < 1) return 'hace instantes';
+    if(min < 60) return `hace ${min} min`;
+    const h = Math.floor(min/60);
+    if(h < 24) return `hace ${h} h`;
+    const d = Math.floor(h/24);
+    return `hace ${d} d`;
+  }
+
+  function catInfo(id){
+    return CATS.find(c => c.id === id) || {id, label:id, icon: ICONS_FALLBACK[id] || '🏷️'};
+  }
+
+  function buildChips(){
+    storeChips.innerHTML = '<button class="chip active" data-type="store" data-value="all">Todos</button>' +
+      STORES.map(s => `<button class="chip" data-type="store" data-value="${s}">${s}</button>`).join('');
+
+    catChips.innerHTML = '<button class="chip active" data-type="cat" data-value="all">Todas las categorías</button>' +
+      CATS.map(c => `<button class="chip" data-type="cat" data-value="${c.id}">${c.icon} ${c.label}</button>`).join('');
+  }
+
+  function toggleChip(btn){
+    const type = btn.dataset.type;
+    const val = btn.dataset.value;
+    const set = type === 'store' ? state.stores : state.cats;
+    const container = type === 'store' ? storeChips : catChips;
+
+    if(val === 'all'){
+      set.clear();
+      [...container.children].forEach(c => c.classList.remove('active'));
+      btn.classList.add('active');
+      return;
+    }
+    container.querySelector('[data-value="all"]').classList.remove('active');
+    if(set.has(val)){
+      set.delete(val);
+      btn.classList.remove('active');
+    } else {
+      set.add(val);
+      btn.classList.add('active');
+    }
+    if(set.size === 0){
+      container.querySelector('[data-value="all"]').classList.add('active');
+    }
+  }
+
+  function attachChipEvents(){
+    [...storeChips.children, ...catChips.children].forEach(btn=>{
+      btn.addEventListener('click', ()=>{ toggleChip(btn); render(); });
+    });
+  }
+
+  function applyFilters(){
+    let list = ALL.filter(d => {
+      if(state.query && !d.nombre.toLowerCase().includes(state.query)) return false;
+      if(state.stores.size && !state.stores.has(d.supermercado)) return false;
+      if(state.cats.size && !state.cats.has(d.categoria)) return false;
+      if(d.precio_actual > state.maxPrice) return false;
+      return true;
+    });
+
+    switch(state.sort){
+      case 'discount': list.sort((a,b)=>b.descuento_pct-a.descuento_pct); break;
+      case 'price-asc': list.sort((a,b)=>a.precio_actual-b.precio_actual); break;
+      case 'price-desc': list.sort((a,b)=>b.precio_actual-a.precio_actual); break;
+      case 'recent': list.sort((a,b)=> new Date(b.actualizado) - new Date(a.actualizado)); break;
+    }
+    return list;
+  }
+
+  function cardHtml(d){
+    const ci = catInfo(d.categoria);
+    const isDemo = !!d.es_demo || d.fuente === 'demo';
+    return `
+      <article class="card">
+        <div class="card-top">
+          ${isDemo ? '<span class="demo-tag">DEMO</span>' : ''}
+          <span class="store-tag">${d.supermercado}</span>
+          <span class="cat-tag">${ci.icon} ${d.categoria_label || ci.label}</span>
+        </div>
+        <div class="tear" aria-hidden="true"></div>
+        <div class="card-body">
+          <div class="product-name">${d.nombre}</div>
+          <div class="price-row">
+            <span class="price-now mono">${fmtCLP(d.precio_actual)}</span>
+            <span class="price-old mono">${fmtCLP(d.precio_anterior)}</span>
+            <span class="badge-discount">-${d.descuento_pct}%</span>
+          </div>
+          <div class="card-foot">
+            <span class="updated"><span class="dot"></span>actualizado ${timeAgo(d.actualizado)}</span>
+            <span class="unit-price">${d.unidad_precio || ''}</span>
+          </div>
+          ${d.url_oferta ? `<a class="card-link" href="${d.url_oferta}" target="_blank" rel="noopener noreferrer">
+            Ver oferta original
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M7 17L17 7M7 7h10v10"/></svg>
+          </a>` : ''}
+        </div>
+      </article>`;
+  }
+
+  function render(){
+    const list = applyFilters();
+    resultsCount.textContent = `${list.length} resultado${list.length===1?'':'s'} de ${ALL.length}`;
+    statCount.textContent = list.length;
+    statAvg.textContent = list.length ? Math.round(list.reduce((s,d)=>s+d.descuento_pct,0)/list.length) + '%' : '0%';
+
+    if(!list.length){
+      grid.innerHTML = `
+        <div class="empty">
+          <div style="font-size:2rem;">📡</div>
+          <h3>El radar no encontró nada</h3>
+          <p>Prueba con otro término, quita algún filtro o sube el precio máximo.</p>
+          <button id="resetBtn">Limpiar filtros</button>
+        </div>`;
+      document.getElementById('resetBtn').addEventListener('click', resetFilters);
+      return;
+    }
+
+    grid.innerHTML = list.map(cardHtml).join('');
+  }
+
+  function resetFilters(){
+    state.query=''; state.stores.clear(); state.cats.clear();
+    state.maxPrice = priceRange.max ? Number(priceRange.max) : 9999999;
+    state.sort='discount';
+    searchInput.value=''; clearSearch.hidden=true;
+    priceRange.value = priceRange.max; priceOutput.textContent = fmtCLP(state.maxPrice);
+    sortSelect.value='discount';
+    buildChips();
+    attachChipEvents();
+    render();
+  }
+
+  function setupPriceRange(){
+    const prices = ALL.map(d => d.precio_actual);
+    const min = Math.floor(Math.min(...prices) / 100) * 100;
+    const max = Math.ceil(Math.max(...prices) / 100) * 100;
+    priceRange.min = min;
+    priceRange.max = max;
+    priceRange.step = 100;
+    priceRange.value = max;
+    priceOutput.textContent = fmtCLP(max);
+    state.maxPrice = max;
+  }
+
+  function aplicarEstadoDeDatos(){
+    const total = ALL.length;
+    const demoCount = ALL.filter(d => d.es_demo).length;
+
+    if(total === 0){
+      document.title = 'Pocas Lucas — Radar de ofertas de supermercados en Chile';
+      tagline.textContent = 'Ofertas de supermercados en Chile: despensa, aseo, bebidas y más.';
+      demoBanner.hidden = true;
+      return;
+    }
+
+    if(demoCount === 0){
+      // 100% datos reales
+      document.title = 'Pocas Lucas — Radar de ofertas reales de Chile';
+      tagline.textContent = 'Ofertas reales de supermercados en Chile: despensa, aseo, bebidas y más. Sin relleno, solo precios que bajaron de verdad.';
+      demoBanner.hidden = true;
+    } else if(demoCount === total){
+      // 100% demo
+      document.title = 'Pocas Lucas — Prototipo (datos de demostración)';
+      tagline.textContent = 'Estás viendo un prototipo de diseño: todavía no hay ninguna fuente de precios real conectada.';
+      demoBanner.hidden = false;
+      demoBannerTitle.textContent = 'Datos de demostración.';
+      demoBannerText.textContent = meta.aviso ||
+        'Ningún precio de este listado es real todavía. Se muestran solo para probar el diseño del radar.';
+    } else {
+      // mixto: algunas tiendas ya tienen datos reales, otras siguen en demo
+      document.title = 'Pocas Lucas — Radar de ofertas (datos reales + demo)';
+      tagline.textContent = 'Radar de ofertas de supermercados en Chile. Los productos marcados DEMO todavía no tienen una fuente real conectada.';
+      demoBanner.hidden = false;
+      demoBannerTitle.textContent = 'Datos parcialmente reales.';
+      demoBannerText.textContent =
+        `${total - demoCount} de ${total} productos son precios reales verificados hoy. ` +
+        `Los ${demoCount} restantes, marcados DEMO, siguen esperando su fuente real.`;
+    }
+  }
+
+  function refreshTimestamps(){
+    // Vuelve a calcular "hace X min/h" sin re-pedir datos.
+    document.querySelectorAll('.card').forEach((card, i) => {
+      // no-op placeholder: el recálculo real ocurre en el próximo render()
+    });
+    if(meta.generado_el){
+      updatedAgo.textContent = `actualizado ${timeAgo(meta.generado_el)}`;
+    }
+  }
+
+  async function loadData(){
+    grid.innerHTML = '<p class="loading">📡 Buscando ofertas en el radar…</p>';
+    try{
+      const res = await fetch(DATA_URL, {cache:'no-store'});
+      if(!res.ok) throw new Error('HTTP ' + res.status);
+      const json = await res.json();
+
+      ALL = json.productos || [];
+      meta = json.meta || {};
+      CATS = (meta.categorias || []).map(c => ({id:c.id, label:c.label, icon:c.icono}));
+      STORES = meta.supermercados || [...new Set(ALL.map(d => d.supermercado))];
+
+      if(!CATS.length){
+        const catIds = [...new Set(ALL.map(d => d.categoria))];
+        CATS = catIds.map(id => catInfo(id));
+      }
+
+      aplicarEstadoDeDatos();
+
+      statStores.textContent = STORES.length;
+      buildChips();
+      attachChipEvents();
+      setupPriceRange();
+      render();
+      refreshTimestamps();
+    } catch(err){
+      console.error('No se pudo cargar ofertas.json', err);
+      grid.innerHTML = `
+        <div class="load-error">
+          ⚠️ No se pudo cargar <code>ofertas.json</code>.<br>
+          Si estás probando el archivo localmente, ábrelo desde un servidor
+          (por ejemplo <code>netlify dev</code> o <code>python3 -m http.server</code>),
+          ya que el navegador bloquea <code>fetch()</code> sobre archivos <code>file://</code>.
+        </div>`;
+      updatedAgo.textContent = 'sin datos';
+    }
+  }
+
+  let debounceTimer;
+  searchInput.addEventListener('input', (e)=>{
+    clearTimeout(debounceTimer);
+    const val = e.target.value;
+    clearSearch.hidden = !val;
+    debounceTimer = setTimeout(()=>{
+      state.query = val.trim().toLowerCase();
+      render();
+    }, 150);
+  });
+
+  clearSearch.addEventListener('click', ()=>{
+    searchInput.value=''; clearSearch.hidden=true; state.query=''; render(); searchInput.focus();
+  });
+
+  priceRange.addEventListener('input', (e)=>{
+    state.maxPrice = Number(e.target.value);
+    priceOutput.textContent = fmtCLP(state.maxPrice);
+    render();
+  });
+
+  sortSelect.addEventListener('change', (e)=>{
+    state.sort = e.target.value;
+    render();
+  });
+
+  // Recalcula los "hace X min" cada minuto sin volver a pedir el JSON.
+  setInterval(()=>{
+    render();
+    refreshTimestamps();
+  }, 60000);
+
+  loadData();
+})();
+</script>
+</body>
+</html>
