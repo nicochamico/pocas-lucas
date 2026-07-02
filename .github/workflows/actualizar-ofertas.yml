@@ -1,0 +1,57 @@
+name: Actualizar ofertas
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 10 * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: actualizar-ofertas
+  cancel-in-progress: false
+
+jobs:
+  actualizar:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Preparar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Instalar dependencias
+        run: python -m pip install --upgrade pip && pip install -r requirements.txt
+
+      - name: Verificar fuentes configuradas
+        run: python verificar_fuentes.py || true
+
+      - name: Actualizar ofertas.json
+        run: python actualizar_ofertas.py
+
+      - name: Confirmar si hay datos reales
+        run: |
+          python - <<'PY'
+          import json
+          data=json.load(open('ofertas.json', encoding='utf-8'))
+          total=len(data.get('productos', []))
+          reales=sum(1 for p in data.get('productos', []) if not p.get('es_demo', True))
+          print(f'Productos: {total} | Reales: {reales} | Demo: {total-reales}')
+          PY
+
+      - name: Guardar cambios en el repositorio
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add ofertas.json
+          if git diff --cached --quiet; then
+            echo "Sin cambios en ofertas.json"
+          else
+            git commit -m "Actualizar ofertas"
+            git push
+          fi
